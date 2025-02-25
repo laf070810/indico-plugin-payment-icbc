@@ -1,0 +1,44 @@
+{% if not payment_allowed %}
+{{ message }}
+{% else %}
+Clicking on the <strong>Pay Now</strong> button you will get redirected to the ICBCpay site in order to complete your
+transaction. <strong>If your bank card is issued by an overseas bank (e.g. VISA, Mastercard), please select "Bank of
+    China" to pay your fee in the ICBCpay site.</strong>
+
+<dl class="i-data-list">
+    <dt>{% trans %}First name{% endtrans %}</dt>
+    <dd>{{ registration.first_name }}</dd>
+    <dt>{% trans %}Last name{% endtrans %}</dt>
+    <dd>{{ registration.last_name }}</dd>
+    <dt>{% trans %}Total amount{% endtrans %}</dt>
+    <dd>{{ format_currency(amount, currency, locale=session.lang) }}</dd>
+    <dt></dt>
+    <dd>
+        <form name="payment_form" action="{{ settings.url }}" method="POST">
+            <input type="hidden" name="app_id" value="{{ app_id }}">
+            <input type="hidden" name="msg_id" value="{{ msg_id }}">
+            <input type="hidden" name="format" value="{{ format }}">
+            <input type="hidden" name="charset" value="{{ charset }}">
+            <input type="hidden" name="encrypt_type" value="{{ encrypt_type }}">
+            <input type="hidden" name="sign_type" value="{{ sign_type }}">
+            <input type="hidden" name="sign" value="{{ sign }}">
+            <input type="hidden" name="timestamp" value="{{ timestamp }}">
+            <input type="hidden" name="biz_content" value="{{ biz_content }}">
+
+            <button type="submit" name="submit">
+                <img src="{{ logo_url }}" alt="Submit">
+            </button>
+            <!-- <input type="submit" name="submit_domestic" value="domestic">
+            <input type="submit" name="submit_international" value="international"
+                onclick="change_method_to_international_payment()"> -->
+        </form>
+    </dd>
+</dl>
+<script>
+    function change_method_to_international_payment() {
+        document.payment_form.method.value = document.payment_form.method_fc.value
+        document.payment_form.bizContent.value = document.payment_form.bizContent_fc.value
+        document.payment_form.sign.value = document.payment_form.sign_fc.value
+    }
+</script>
+{% endif %}
