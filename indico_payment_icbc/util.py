@@ -1,10 +1,48 @@
 import base64
 
 from Crypto.Cipher import AES
-from Crypto.Hash import MD5, SHA256
+from Crypto.Hash import MD5, SHA1, SHA256
 from Crypto.PublicKey import RSA
-from Crypto.Signature import PKCS1_v1_5
-from Crypto.Util.Padding import pad
+from Crypto.Signature import pkcs1_15
+from Crypto.Util.Padding import pad, unpad
+
+
+def aes_encrypt(to_encrypt: str, key: str) -> str:
+    # 将Base64编码的密钥解码为字节
+    key_bytes = base64.b64decode(key)
+    # 将明文转换为UTF-8编码的字节
+    plaintext_bytes = to_encrypt.encode("utf-8")
+    # 创建全零的IV（16字节）
+    iv = bytes([0] * 16)
+    # 创建AES-CBC cipher实例，使用PKCS7填充
+    cipher = AES.new(key_bytes, AES.MODE_CBC, iv=iv)
+    # 对明文进行PKCS7填充
+    padded_plaintext = pad(plaintext_bytes, AES.block_size, style="pkcs7")
+    # 执行加密
+    ciphertext = cipher.encrypt(padded_plaintext)
+    # 返回Base64编码的密文
+    return base64.b64encode(ciphertext).decode("utf-8")
+
+
+def aes_decrypt(to_decrypt: str, key: str) -> str:
+    # Decode the Base64 encoded key and ciphertext
+    key_bytes = base64.b64decode(key)
+    ciphertext_bytes = base64.b64decode(to_decrypt)
+
+    # Create the zero-filled IV (same as encryption)
+    iv = bytes([0] * 16)
+
+    # Create AES-CBC cipher instance
+    cipher = AES.new(key_bytes, AES.MODE_CBC, iv=iv)
+
+    # Decrypt the ciphertext
+    decrypted_padded = cipher.decrypt(ciphertext_bytes)
+
+    # Remove PKCS7 padding
+    decrypted = unpad(decrypted_padded, AES.block_size, style="pkcs7")
+
+    # Return the decrypted string
+    return decrypted.decode("utf-8")
 
 
 class RsaUtil(object):
@@ -40,7 +78,7 @@ class RsaUtil(object):
         """
         hash_obj = SHA256.new(encrypt_str.encode(encoding="utf-8"))
         # 改用PKCS1_v1_5
-        return base64.b64encode(PKCS1_v1_5.new(self.private_key).sign(hash_obj)).decode(
+        return base64.b64encode(pkcs1_15.new(self.private_key).sign(hash_obj)).decode(
             encoding="utf-8"
         )
 
@@ -51,34 +89,17 @@ class RsaUtil(object):
         :param signature:
         :return:
         """
-        hash_obj = MD5.new(encrypt_str.encode(encoding="utf-8"))
+        hash_obj = SHA256.new(encrypt_str.encode(encoding="utf-8"))
         decode_sign = base64.b64decode(signature)
         # print(f'decode sign {decode_sign}')
 
         try:
             # 改用PKCS1_v1_5
-            PKCS1_v1_5.new(self.public_key).verify(hash_obj, decode_sign)
+            pkcs1_15.new(self.public_key).verify(hash_obj, decode_sign)
         except (ValueError, TypeError) as e:
             print(f"signature invalid, error {e}")
             return False
         return True
-
-    @staticmethod
-    def aes_encrypt(to_encrypt: str, key: str) -> str:
-        # 将Base64编码的密钥解码为字节
-        key_bytes = base64.b64decode(key)
-        # 将明文转换为UTF-8编码的字节
-        plaintext_bytes = to_encrypt.encode("utf-8")
-        # 创建全零的IV（16字节）
-        iv = bytes([0] * 16)
-        # 创建AES-CBC cipher实例，使用PKCS7填充
-        cipher = AES.new(key_bytes, AES.MODE_CBC, iv=iv)
-        # 对明文进行PKCS7填充
-        padded_plaintext = pad(plaintext_bytes, AES.block_size, style="pkcs7")
-        # 执行加密
-        ciphertext = cipher.encrypt(padded_plaintext)
-        # 返回Base64编码的密文
-        return base64.b64encode(ciphertext).decode("utf-8")
 
     @staticmethod
     def encrypt_str(path, params):

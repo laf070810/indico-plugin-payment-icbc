@@ -22,7 +22,7 @@ from wtforms.validators import DataRequired, Optional, Regexp
 
 from indico_payment_icbc import _
 from indico_payment_icbc.blueprint import blueprint
-from indico_payment_icbc.util import RsaUtil
+from indico_payment_icbc.util import RsaUtil, aes_encrypt
 
 
 class PluginSettingsForm(PaymentPluginSettingsFormBase):
@@ -345,7 +345,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content["order_date"] = time.strftime(
             "%Y%m%d%H%M%S", time.localtime(current_time)
         )
-        biz_content["out_trade_no"] = str(current_time)
+        biz_content["out_trade_no"] = str(registration.id)
         biz_content["amount"] = str(round(amount * 100))
         biz_content["installment_times"] = "1"
         biz_content["cur_type"] = "001"
@@ -372,7 +372,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content["mer_order_remark"] = trade_summary
         biz_content["page_linkage_flag"] = "1"
 
-        data["biz_content"] = RsaUtil.aes_encrypt(
+        data["biz_content"] = aes_encrypt(
             json.dumps(biz_content, separators=(",", ":")),
             event_settings["encrypt_key"],
         )
@@ -382,7 +382,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content_foreign = {}
         biz_content_foreign["client_type"] = "0"
         biz_content_foreign["icbc_appid"] = event_settings["app_id"]
-        biz_content_foreign["out_trade_no"] = str(current_time)
+        biz_content_foreign["out_trade_no"] = str(registration.id)
         biz_content_foreign["amount"] = str(round(amount * 100))
         biz_content_foreign["installment_times"] = "1"
         biz_content_foreign["cur_type"] = "001"
@@ -398,7 +398,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content_foreign["is_applepay"] = "0"
         biz_content_foreign["order_apd_inf"] = trade_summary[:70]
 
-        data["biz_content_foreign"] = RsaUtil.aes_encrypt(
+        data["biz_content_foreign"] = aes_encrypt(
             json.dumps(biz_content_foreign, separators=(",", ":")),
             event_settings["encrypt_key"],
         )
