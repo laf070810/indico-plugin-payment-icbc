@@ -3,12 +3,12 @@
 
 {% block details %}
     {% if not transaction.data._migrated %}
-        <dt>{% trans %}Payment item ID{% endtrans %}</dt>
-        <dd>{{ transaction.data.paymentItemId }}</dd>
+        <dt>{% trans %}App ID{% endtrans %}</dt>
+        <dd>{{ transaction.data.app_id }}</dd>
         <dt>{% trans %}Timestamp{% endtrans %}</dt>
         <dd>{{ transaction.data.timestamp }}</dd>
-        <dt>{% trans %}BizContent{% endtrans %}</dt>
-        <dd>{{ transaction.data.bizContent }}</dd>
+        <dt>{% trans %}biz_content{% endtrans %}</dt>
+        <dd>{{ transaction.data.biz_content }}</dd>
     {% endif %}
 {% endblock %}
 
