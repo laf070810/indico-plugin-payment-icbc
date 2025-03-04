@@ -7,7 +7,10 @@ import requests
 from flask import flash, redirect, request
 from flask_pluginengine import current_plugin
 from indico.core.logger import Logger
-from indico.modules.events.payment.models.transactions import TransactionAction
+from indico.modules.events.payment.models.transactions import (
+    TransactionAction,
+    TransactionStatus,
+)
 from indico.modules.events.payment.notifications import notify_amount_inconsistency
 from indico.modules.events.payment.util import register_transaction
 from indico.modules.events.registration.models.registrations import Registration
@@ -99,7 +102,7 @@ class RHICBCpayNotify(RH):
         # -------- register transaction --------
         register_transaction(
             registration=self.registration,
-            amount=float(self.biz_content["total_amt"]),
+            amount=float(self.biz_content["total_amt"]) / 100,
             currency=self.registration.currency,
             action=transaction_action_mapping[payment_status],
             provider="icbc",
@@ -146,7 +149,11 @@ kx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4
 
     def _is_transaction_duplicated(self):
         transaction = self.registration.transaction
-        if not transaction or transaction.provider != "icbc":
+        if (
+            not transaction
+            or transaction.provider != "icbc"
+            or transaction.status != TransactionStatus.successful
+        ):
             return False
 
         # biz_content is from database. self.biz_content is from current request. We compare them
@@ -195,7 +202,9 @@ class RHICBCpaySuccess(RHICBCpayNotify):
         # -------- biz content --------
         biz_content = {}
         biz_content["mer_id"] = event_settings["mer_id"]
-        biz_content["out_trade_no"] = str(self.registration.id)
+        biz_content["out_trade_no"] = json.loads(
+            self.registration.transaction.data["biz_content"]
+        )["out_trade_no"]
         biz_content["deal_flag"] = "0"
         biz_content["icbc_app_id"] = event_settings["app_id"]
         biz_content["mer_prtcl_no"] = event_settings["mer_prtcl_no"]

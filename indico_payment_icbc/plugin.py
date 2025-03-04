@@ -10,6 +10,8 @@ from indico.modules.events.payment import (
     PaymentPluginMixin,
     PaymentPluginSettingsFormBase,
 )
+from indico.modules.events.payment.models.transactions import TransactionAction
+from indico.modules.events.payment.util import register_transaction
 from indico.modules.events.registration.models.registrations import (
     Registration,
     RegistrationState,
@@ -345,7 +347,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content["order_date"] = time.strftime(
             "%Y%m%d%H%M%S", time.localtime(current_time)
         )
-        biz_content["out_trade_no"] = str(registration.id)
+        biz_content["out_trade_no"] = str(current_time)
         biz_content["amount"] = str(round(amount * 100))
         biz_content["installment_times"] = "1"
         biz_content["cur_type"] = "001"
@@ -383,7 +385,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content_foreign = {}
         biz_content_foreign["client_type"] = "0"
         biz_content_foreign["icbc_appid"] = event_settings["app_id"]
-        biz_content_foreign["out_trade_no"] = str(registration.id)
+        biz_content_foreign["out_trade_no"] = str(current_time)
         biz_content_foreign["amount"] = str(round(amount * 100))
         biz_content_foreign["installment_times"] = "1"
         biz_content_foreign["cur_type"] = "001"
@@ -449,6 +451,24 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         )
         signature = rsa_util.create_sign(encrypt_str)
         data["sign_foreign"] = signature
+
+        # -------- register unfinished transaction for later querying --------
+        register_transaction(
+            registration=registration,
+            amount=amount,
+            currency=registration.currency,
+            action=TransactionAction.pending,
+            provider="icbc",
+            data=None,
+        )
+        register_transaction(
+            registration=registration,
+            amount=amount,
+            currency=registration.currency,
+            action=TransactionAction.reject,
+            provider="icbc",
+            data={"biz_content": json.dumps(biz_content)},
+        )
 
         # -------- get URL --------
         # fields_to_pass_by_url = [
