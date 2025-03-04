@@ -33,7 +33,9 @@ class RHICBCpayNotify(RH):
         self.registration = Registration.query.filter_by(uuid=self.token).first()
         if not self.registration:
             raise BadRequest
-        self.biz_content = json.loads(request.form.get("biz_content"))
+        Logger.get().info(request)
+        Logger.get().info(request.form)
+        self.biz_content = json.loads(request.form.get("biz_content", "{}"))
 
     def _process(self):
         # -------- verify signature --------
@@ -158,7 +160,7 @@ class RHICBCpaySuccess(RHICBCpayNotify):
     """Confirmation message after successful payment"""
 
     def _process(self):
-        super()._process()
+        # super()._process()
         flash(_("Your payment request has been processed."), "success")
         return redirect(
             url_for(

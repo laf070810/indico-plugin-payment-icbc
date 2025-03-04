@@ -29,6 +29,11 @@ class PluginSettingsForm(PaymentPluginSettingsFormBase):
     url = URLField(
         _("API URL"), [DataRequired()], description=_("URL of the ICBCpay HTTP API.")
     )
+    url_foreign = URLField(
+        _("API URL of foreign pay"),
+        [DataRequired()],
+        description=_("URL of the ICBC foreign pay HTTP API."),
+    )
     app_id = StringField(
         _("app_id"),
         [Optional()],
@@ -147,6 +152,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
     default_settings = {
         "method_name": "ICBC",
         "url": "https://gw.open.icbc.com.cn/ui/cardbusiness/epaypc/consumption/V1",
+        "url_foreign": "https://gw.open.icbc.com.cn/ui/cardbusiness/aggregatepay/b2c/online/ui/foreignpay/V1",
         "app_id": "",
         "sign_key": "",
         "encrypt_key": "",
@@ -334,7 +340,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         trade_summary = trade_summary[:150]
 
         biz_content = {}
-        biz_content["icbc_flag"] = "2"
+        biz_content["icbc_flag"] = "1"
         biz_content["icbc_appid"] = event_settings["app_id"]
         biz_content["order_date"] = time.strftime(
             "%Y%m%d%H%M%S", time.localtime(current_time)
@@ -364,13 +370,38 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content["verify_join_flag"] = "0"
         biz_content["mer_custom_id"] = registration.email
         biz_content["mer_order_remark"] = trade_summary
-        biz_content["e_Name"] = plain_name[:20]
+        biz_content["page_linkage_flag"] = "1"
 
         data["biz_content"] = RsaUtil.aes_encrypt(
             json.dumps(biz_content, separators=(",", ":")),
             event_settings["encrypt_key"],
         )
         # data["biz_content"] = json.dumps(biz_content, separators=(",", ":"))
+
+        # -------- biz content: foreign --------
+        biz_content_foreign = {}
+        biz_content_foreign["client_type"] = "0"
+        biz_content_foreign["icbc_appid"] = event_settings["app_id"]
+        biz_content_foreign["out_trade_no"] = str(current_time)
+        biz_content_foreign["amount"] = str(round(amount * 100))
+        biz_content_foreign["installment_times"] = "1"
+        biz_content_foreign["cur_type"] = "001"
+        biz_content_foreign["mer_id"] = event_settings["mer_id"]
+        biz_content_foreign["mer_prtcl_no"] = event_settings["mer_prtcl_no"]
+        biz_content_foreign["mer_url"] = url_for_plugin(
+            "payment_icbc.notify", registration.locator.uuid, _external=True
+        )
+        biz_content_foreign["return_url"] = url_for_plugin(
+            "payment_icbc.success", registration.locator.uuid, _external=True
+        )
+        biz_content_foreign["attach"] = registration.email
+        biz_content_foreign["is_applepay"] = "0"
+        biz_content_foreign["order_apd_inf"] = trade_summary[:70]
+
+        data["biz_content_foreign"] = RsaUtil.aes_encrypt(
+            json.dumps(biz_content_foreign, separators=(",", ":")),
+            event_settings["encrypt_key"],
+        )
 
         # -------- signing --------
         fields_to_sign = [
@@ -395,6 +426,28 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         encrypt_str = RsaUtil.encrypt_str(urlparse(settings["url"]).path, data_to_sign)
         signature = rsa_util.create_sign(encrypt_str)
         data["sign"] = signature
+
+        # -------- signing: foreign --------
+        fields_to_sign = [
+            "app_id",
+            "msg_id",
+            "format",
+            "charset",
+            "encrypt_type",
+            "sign_type",
+            "timestamp",
+            "biz_content_foreign",
+        ]
+        data_to_sign = {
+            key.replace("biz_content_foreign", "biz_content"): data[key]
+            for key in fields_to_sign
+        }
+
+        encrypt_str = RsaUtil.encrypt_str(
+            urlparse(settings["url_foreign"]).path, data_to_sign
+        )
+        signature = rsa_util.create_sign(encrypt_str)
+        data["sign_foreign"] = signature
 
         # -------- get URL --------
         # fields_to_pass_by_url = [
@@ -423,4 +476,5 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         # data["sign_fc"] = signature
 
         Logger.get().info(biz_content)
+        Logger.get().info(biz_content_foreign)
         Logger.get().info(encrypt_str)

@@ -1,9 +1,10 @@
 {% if not payment_allowed %}
 {{ message }}
 {% else %}
-Clicking on the <strong>Pay Now</strong> button you will get redirected to the ICBCpay site in order to complete your
-transaction. <strong>If your bank card is issued by an overseas bank (e.g. VISA, Mastercard), please select "Bank of
-    China" to pay your fee in the ICBCpay site.</strong>
+Clicking on the buttons below you will be redirected to the ICBC site to complete your transaction. If you would like to
+use <strong>Alipay, WeChatPay or China UnionPay cards</strong>, please click the <strong>"domestic"</strong> button. If
+your bank card is issued by an <strong>overseas bank (e.g. VISA, Mastercard)</strong>, please select
+<strong>"international"</strong> to pay your fee.
 
 <dl class="i-data-list">
     <dt>{% trans %}First name{% endtrans %}</dt>
@@ -25,20 +26,29 @@ transaction. <strong>If your bank card is issued by an overseas bank (e.g. VISA,
             <input type="hidden" name="timestamp" value="{{ timestamp }}">
             <input type="hidden" name="biz_content" value="{{ biz_content }}">
 
-            <button type="submit" name="submit">
+            <input type="hidden" name="url_foreign" value="{{ settings.url_foreign }}">
+            <input type="hidden" name="sign_foreign" value="{{ sign_foreign }}">
+            <input type="hidden" name="biz_content_foreign" value="{{ biz_content_foreign }}">
+
+            <!-- <button type="submit" name="submit">
                 <img src="{{ logo_url }}" alt="Submit">
-            </button>
-            <!-- <input type="submit" name="submit_domestic" value="domestic">
-            <input type="submit" name="submit_international" value="international"
-                onclick="change_method_to_international_payment()"> -->
+            </button> -->
+            <button type="submit" onclick="remove_additional_fields()">domestic</button>
+            <button type="submit" onclick="international_payment()">international</button>
         </form>
     </dd>
 </dl>
 <script>
-    function change_method_to_international_payment() {
-        document.payment_form.method.value = document.payment_form.method_fc.value
-        document.payment_form.bizContent.value = document.payment_form.bizContent_fc.value
-        document.payment_form.sign.value = document.payment_form.sign_fc.value
+    function remove_additional_fields() {
+        document.payment_form.url_foreign.remove()
+        document.payment_form.biz_content_foreign.remove()
+        document.payment_form.sign_foreign.remove()
+    }
+    function international_payment() {
+        document.payment_form.action = document.payment_form.url_foreign.value
+        document.payment_form.biz_content.value = document.payment_form.biz_content_foreign.value
+        document.payment_form.sign.value = document.payment_form.sign_foreign.value
+        remove_additional_fields()
     }
 </script>
 {% endif %}
