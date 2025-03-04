@@ -351,6 +351,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content["cur_type"] = "001"
         biz_content["mer_id"] = event_settings["mer_id"]
         biz_content["mer_prtcl_no"] = event_settings["mer_prtcl_no"]
+        biz_content["goods_id"] = str(registration.friendly_id)
         biz_content["goods_name"] = goods_name
         biz_content["mer_reference"] = urlparse(
             url_for_plugin(
