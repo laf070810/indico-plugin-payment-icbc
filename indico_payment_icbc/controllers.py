@@ -39,11 +39,13 @@ class RHICBCpayNotify(RH):
 
     def _process(self):
         # -------- verify signature --------
-        # if not self._verify_signature():
-        #     Logger.get().info(
-        #         f"Signature verification failed. Transaction not registered. Request form: {request.form}"
-        #     )
-        #     return
+        if not self._verify_signature():
+            Logger.get().info(
+                f"Signature verification failed. Transaction not registered. Request form: {request.form}"
+            )
+            return
+        else:
+            Logger.get().info(f"Signature verification succeeded.")
 
         # -------- verify business --------
         # self._verify_business()
@@ -91,37 +93,22 @@ class RHICBCpayNotify(RH):
         )
 
     def _verify_signature(self):
-        fields_to_sign = [
-            "app_id",
-            "msg_id",
-            "format",
-            "charset",
-            "encrypt_type",
-            "sign_type",
-            "timestamp",
-            "biz_content",
-        ]
+        fields_to_sign = [key for key in request.form.keys() if key != "sign"]
         data_to_sign = {key: request.form[key] for key in fields_to_sign}
 
         public_key = (
             "-----BEGIN PUBLIC KEY-----"
             + """
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzBIK71iL
-hfauIPG7ebZci86gjhQ9NtzZPTmQYn0MCz905Al2XHndQOy45fkIV
-A9aRo/fvDmOhYmG/9wN3hRIDTsFvRdIOKG7A7fVYF00TUZtuszDk
-3MwvM2dFsf+9giQOAR2S83KeRHREyb6vIRDeGDqMX1AJfpN5rY
-uzEZeqZrnig9BawFQ1pbuDtOK5u0gWz6hXZSt9vBHc7BaieDeNkh
-/GxW86fvcdPmpZTvAZAqE75K7u85+KEmKnJVm2UMxrtQYqO0ut
-ItUPAsesULm93Q4PPFCW9Mfex8HlvvnU13NhOW1SkKa1ktkiQQU
-Tdf7Rhor80tccg5F75Guk4Yf2wIDAQAB
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIp
+iPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZER
+kx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4
++EBpXo8gNiAFsNwIDAQAB
 """
             + "-----END PUBLIC KEY-----"
         )
         rsa_util = RsaUtil(public_key=public_key)
 
-        encrypt_str = RsaUtil.encrypt_str(
-            "/ui/cardbusiness/epaypc/consumption/V1", data_to_sign
-        )
+        encrypt_str = RsaUtil.encrypt_str(request.form["api"], data_to_sign)
         signature = request.form["sign"]
 
         return rsa_util.verify_sign(encrypt_str, signature)

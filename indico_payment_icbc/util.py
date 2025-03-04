@@ -1,7 +1,7 @@
 import base64
 
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
+from Crypto.Hash import MD5, SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Util.Padding import pad
@@ -51,7 +51,7 @@ class RsaUtil(object):
         :param signature:
         :return:
         """
-        hash_obj = SHA256.new(encrypt_str.encode(encoding="utf-8"))
+        hash_obj = MD5.new(encrypt_str.encode(encoding="utf-8"))
         decode_sign = base64.b64decode(signature)
         # print(f'decode sign {decode_sign}')
 
