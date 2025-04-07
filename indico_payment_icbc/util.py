@@ -46,6 +46,17 @@ def aes_decrypt(to_decrypt: str, key: str) -> str:
 
 
 class RsaUtil(object):
+    ICBC_PUBLIC_KEY = (
+        "-----BEGIN PUBLIC KEY-----"
+        + """
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIp
+iPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZER
+kx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4
++EBpXo8gNiAFsNwIDAQAB
+"""
+        + "-----END PUBLIC KEY-----"
+    )
+
     def __init__(
         self,
         *,
@@ -89,7 +100,7 @@ class RsaUtil(object):
         :param signature:
         :return:
         """
-        hash_obj = SHA256.new(encrypt_str.encode(encoding="utf-8"))
+        hash_obj = SHA1.new(encrypt_str.encode(encoding="utf-8"))
         decode_sign = base64.b64decode(signature)
         # print(f'decode sign {decode_sign}')
 

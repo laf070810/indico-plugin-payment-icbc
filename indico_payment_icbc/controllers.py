@@ -113,20 +113,13 @@ class RHICBCpayNotify(RH):
         fields_to_sign = [key for key in self.response_form.keys() if key != "sign"]
         data_to_sign = {key: self.response_form[key] for key in fields_to_sign}
 
-        public_key = (
-            "-----BEGIN PUBLIC KEY-----"
-            + """
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIp
-iPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZER
-kx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4
-+EBpXo8gNiAFsNwIDAQAB
-"""
-            + "-----END PUBLIC KEY-----"
-        )
-        rsa_util = RsaUtil(public_key=public_key)
+        rsa_util = RsaUtil(public_key=RsaUtil.ICBC_PUBLIC_KEY)
 
-        encrypt_str = RsaUtil.encrypt_str(self.response_form["api"], data_to_sign)
+        encrypt_str = RsaUtil.encrypt_str("/notifyUrlServlet", data_to_sign)
         signature = self.response_form["sign"]
+
+        current_plugin.logger.info(encrypt_str)
+        current_plugin.logger.info(signature)
 
         return rsa_util.verify_sign(encrypt_str, signature)
 
@@ -243,21 +236,11 @@ class RHICBCpaySuccess(RHICBCpayNotify):
         return response_json
 
     def _verify_signature(self):
-        public_key = (
-            "-----BEGIN PUBLIC KEY-----"
-            + """
-        MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMpjaWjngB4E3ATh+G1DVAmQnIp
-        iPEFAEDqRfNGAVvvH35yDetqewKi0l7OEceTMN1C6NPym3zStvSoQayjYV+eIcZER
-        kx31KhtFu9clZKgRTyPjdKMIth/wBtPKjL/5+PYalLdomM4ONthrPgnkN4x4R0+D4
-        +EBpXo8gNiAFsNwIDAQAB
-        """
-            + "-----END PUBLIC KEY-----"
-        )
-        rsa_util = RsaUtil(public_key=public_key)
+        rsa_util = RsaUtil(public_key=RsaUtil.ICBC_PUBLIC_KEY)
 
         encrypt_str = self.response_form["response_biz_content"]
         signature = self.response_form["sign"]
 
-        verification_result = rsa_util.verify_sign(encrypt_str, signature)
+        verification_result = rsa_util.verify_sign(f'"{encrypt_str}"', signature)
 
         return verification_result
