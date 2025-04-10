@@ -1,5 +1,5 @@
 [project]
-name = 'indico-plugin-payment-icbc'
+name = 'indico-plugin-payment-icbc2'
 description = 'ICBC payments for Indico event registration fees'
 readme = 'README.md'
 version = '0.0.1'
@@ -18,14 +18,14 @@ dependencies = ['indico>=3.3', 'pycryptodome>=3.21']
 GitHub = 'https://github.com/indico/indico-plugins'
 
 [project.entry-points.'indico.plugins']
-payment_icbc = 'indico_payment_icbc.plugin:ICBCPaymentPlugin'
+payment_icbc2 = 'indico_payment_icbc2.plugin:ICBC2PaymentPlugin'
 
 [build-system]
 requires = ['hatchling==1.26.3']
 build-backend = 'hatchling.build'
 
 [tool.hatch.build]
-packages = ['indico_payment_icbc']
+packages = ['indico_payment_icbc2']
 exclude = [
     '*.no-header',
     '.keep',
