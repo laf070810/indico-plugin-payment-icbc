@@ -361,7 +361,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
             )
         ).hostname
         biz_content["mer_url"] = url_for_plugin(
-            "payment_icbc.notify", registration.locator.uuid, _external=True
+            "payment_icbc.success", registration.locator.uuid, _external=True
         )
         biz_content["return_url"] = url_for_plugin(
             "payment_icbc.success", registration.locator.uuid, _external=True
@@ -392,7 +392,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content_foreign["mer_id"] = event_settings["mer_id"]
         biz_content_foreign["mer_prtcl_no"] = event_settings["mer_prtcl_no"]
         biz_content_foreign["mer_url"] = url_for_plugin(
-            "payment_icbc.notify", registration.locator.uuid, _external=True
+            "payment_icbc.success", registration.locator.uuid, _external=True
         )
         biz_content_foreign["return_url"] = url_for_plugin(
             "payment_icbc.success", registration.locator.uuid, _external=True

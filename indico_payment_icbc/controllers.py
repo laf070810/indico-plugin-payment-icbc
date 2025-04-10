@@ -52,13 +52,13 @@ class RHICBCpayNotify(RH):
     def _process(self):
         # -------- verify signature --------
         if not self._verify_signature():
-            Logger.get().info(
-                f"Signature verification failed. Request form: {self.response_form}"
-            )
             # Logger.get().info(
-            #     f"Signature verification failed. Transaction not registered. Request form: {self.response_form}"
+            #     f"Signature verification failed. Request form: {self.response_form}"
             # )
-            # return
+            Logger.get().info(
+                f"Signature verification failed. Transaction not registered. Request form: {self.response_form}"
+            )
+            return
         else:
             Logger.get().info(f"Signature verification succeeded.")
 
