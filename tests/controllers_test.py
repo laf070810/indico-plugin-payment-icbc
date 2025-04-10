@@ -12,8 +12,8 @@ from flask import request
 
 from indico.modules.events.payment.models.transactions import PaymentTransaction
 
-from indico_payment_icbc.controllers import RHPaypalIPN
-from indico_payment_icbc.plugin import PaypalPaymentPlugin
+from indico_payment_icbc2.controllers import RHPaypalIPN
+from indico_payment_icbc2.plugin import PaypalPaymentPlugin
 
 
 @pytest.mark.usefixtures('db', 'request_context')

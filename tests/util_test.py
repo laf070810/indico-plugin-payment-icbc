@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from wtforms import ValidationError
 
-from indico_payment_icbc.util import validate_business
+from indico_payment_icbc2.util import validate_business
 
 
 @pytest.mark.parametrize(('data', 'valid'), (

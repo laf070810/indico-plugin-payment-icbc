@@ -22,9 +22,9 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from wtforms.fields import IntegerField, StringField, URLField
 from wtforms.validators import DataRequired, Optional, Regexp
 
-from indico_payment_icbc import _
-from indico_payment_icbc.blueprint import blueprint
-from indico_payment_icbc.util import RsaUtil, aes_encrypt
+from indico_payment_icbc2 import _
+from indico_payment_icbc2.blueprint import blueprint
+from indico_payment_icbc2.util import RsaUtil, aes_encrypt
 
 
 class PluginSettingsForm(PaymentPluginSettingsFormBase):
@@ -142,7 +142,7 @@ class EventSettingsForm(PaymentEventSettingsFormBase):
     )
 
 
-class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
+class ICBC2PaymentPlugin(PaymentPluginMixin, IndicoPlugin):
     """ICBCpay
 
     Plugin for integrating ICBCpay as a payment method in Indico.
@@ -152,7 +152,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
     settings_form = PluginSettingsForm
     event_settings_form = EventSettingsForm
     default_settings = {
-        "method_name": "ICBC",
+        "method_name": "ICBC2",
         "url": "https://gw.open.icbc.com.cn/ui/cardbusiness/epaypc/consumption/V1",
         "url_foreign": "https://gw.open.icbc.com.cn/ui/cardbusiness/aggregatepay/b2c/online/ui/foreignpay/V1",
         "app_id": "",
@@ -357,14 +357,14 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content["goods_name"] = goods_name
         biz_content["mer_reference"] = urlparse(
             url_for_plugin(
-                "payment_icbc.notify", registration.locator.uuid, _external=True
+                "payment_icbc2.notify", registration.locator.uuid, _external=True
             )
         ).hostname
         biz_content["mer_url"] = url_for_plugin(
-            "payment_icbc.success", registration.locator.uuid, _external=True
+            "payment_icbc2.success", registration.locator.uuid, _external=True
         )
         biz_content["return_url"] = url_for_plugin(
-            "payment_icbc.success", registration.locator.uuid, _external=True
+            "payment_icbc2.success", registration.locator.uuid, _external=True
         )
         biz_content["credit_type"] = "2"
         biz_content["expire_time"] = time.strftime(
@@ -392,10 +392,10 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         biz_content_foreign["mer_id"] = event_settings["mer_id"]
         biz_content_foreign["mer_prtcl_no"] = event_settings["mer_prtcl_no"]
         biz_content_foreign["mer_url"] = url_for_plugin(
-            "payment_icbc.success", registration.locator.uuid, _external=True
+            "payment_icbc2.success", registration.locator.uuid, _external=True
         )
         biz_content_foreign["return_url"] = url_for_plugin(
-            "payment_icbc.success", registration.locator.uuid, _external=True
+            "payment_icbc2.success", registration.locator.uuid, _external=True
         )
         biz_content_foreign["attach"] = registration.email
         biz_content_foreign["is_applepay"] = "0"
@@ -458,7 +458,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
             amount=amount,
             currency=registration.currency,
             action=TransactionAction.pending,
-            provider="icbc",
+            provider="icbc2",
             data=None,
         )
         register_transaction(
@@ -466,7 +466,7 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
             amount=amount,
             currency=registration.currency,
             action=TransactionAction.reject,
-            provider="icbc",
+            provider="icbc2",
             data={"biz_content": json.dumps(biz_content)},
         )
 
