@@ -18,8 +18,8 @@ from indico.web.flask.util import url_for
 from indico.web.rh import RH
 from werkzeug.exceptions import BadRequest
 
-from indico_payment_icbc import _
-from indico_payment_icbc.util import RsaUtil, aes_decrypt, aes_encrypt
+from indico_payment_icbc3 import _
+from indico_payment_icbc3.util import RsaUtil, aes_decrypt, aes_encrypt
 
 transaction_action_mapping = {
     "0": TransactionAction.complete,
@@ -28,7 +28,7 @@ transaction_action_mapping = {
 }
 
 
-class RHICBCpayNotify(RH):
+class RHICBC3payNotify(RH):
     """Process the notification (async return) sent by the ICBCpay"""
 
     CSRF_ENABLED = False
@@ -105,7 +105,7 @@ class RHICBCpayNotify(RH):
             amount=float(self.biz_content["total_amt"]) / 100,
             currency=self.registration.currency,
             action=transaction_action_mapping[payment_status],
-            provider="icbc",
+            provider="icbc3",
             data=self.response_form,
         )
 
@@ -144,7 +144,7 @@ class RHICBCpayNotify(RH):
         transaction = self.registration.transaction
         if (
             not transaction
-            or transaction.provider != "icbc"
+            or transaction.provider != "icbc3"
             or transaction.status != TransactionStatus.successful
         ):
             return False
@@ -157,7 +157,7 @@ class RHICBCpayNotify(RH):
         )
 
 
-class RHICBCpaySuccess(RHICBCpayNotify):
+class RHICBC3paySuccess(RHICBC3payNotify):
     """Confirmation message after successful payment"""
 
     def _get_response_form(self):
