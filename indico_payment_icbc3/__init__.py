@@ -1,3 +1,3 @@
 from indico.util.i18n import make_bound_gettext
 
-_ = make_bound_gettext("payment_icbc")
+_ = make_bound_gettext("payment_icbc3")
