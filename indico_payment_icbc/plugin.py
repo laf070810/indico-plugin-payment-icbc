@@ -2,7 +2,7 @@ import json
 import time
 from urllib.parse import urlparse
 
-from flask_pluginengine import render_plugin_template
+from flask_pluginengine import current_plugin, render_plugin_template
 from indico.core.logger import Logger
 from indico.core.plugins import IndicoPlugin, url_for_plugin
 from indico.modules.events.payment import (
@@ -496,6 +496,8 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         # signature = rsa_util.create_sign(encrypt_str)
         # data["sign_fc"] = signature
 
-        Logger.get().info(biz_content)
-        Logger.get().info(biz_content_foreign)
-        Logger.get().info(encrypt_str)
+        current_plugin.logger.info(f"payment form biz_content: {biz_content}")
+        current_plugin.logger.info(
+            f"payment form biz_content_foreign: {biz_content_foreign}"
+        )
+        current_plugin.logger.info(f"payment form encrypt_str: {encrypt_str}")
