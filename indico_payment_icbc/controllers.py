@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 import requests
 from flask import flash, redirect, request
 from flask_pluginengine import current_plugin
-from indico.core.logger import Logger
 from indico.modules.events.payment.models.transactions import (
+    PaymentTransaction,
     TransactionAction,
     TransactionStatus,
 )
@@ -43,8 +43,8 @@ class RHICBCpayNotify(RH):
         self._get_response_form()
         self.biz_content = json.loads(self.response_form["biz_content"])
 
-        Logger.get().info(request)
-        Logger.get().info(self.response_form)
+        current_plugin.logger.info(request)
+        current_plugin.logger.info(self.response_form)
 
     def _get_response_form(self):
         self.response_form = request.form
@@ -52,15 +52,15 @@ class RHICBCpayNotify(RH):
     def _process(self):
         # -------- verify signature --------
         if not self._verify_signature():
-            # Logger.get().info(
+            # current_plugin.logger.info(
             #     f"Signature verification failed. Request form: {self.response_form}"
             # )
-            Logger.get().info(
+            current_plugin.logger.info(
                 f"Signature verification failed. Transaction not registered. Request form: {self.response_form}"
             )
             return
         else:
-            Logger.get().info(f"Signature verification succeeded.")
+            current_plugin.logger.info(f"Signature verification succeeded.")
 
         # -------- verify business --------
         # self._verify_business()
@@ -161,7 +161,7 @@ class RHICBCpaySuccess(RHICBCpayNotify):
     """Confirmation message after successful payment"""
 
     def _get_response_form(self):
-        self.response_form = self._query_result()
+        self.response_form = self._query_all_results()
 
     def _process(self):
         super()._process()
@@ -174,7 +174,34 @@ class RHICBCpaySuccess(RHICBCpayNotify):
             )
         )
 
-    def _query_result(self):
+    def _query_all_results(self):
+        # -------- try to find succeeded payments in PaymentTransaction history --------
+        for transaction in PaymentTransaction.query.filter_by(
+            registration_id=self.registration.id
+        ):
+            # -------- skip transactions without data --------
+            if transaction.data is None:
+                continue
+
+            # -------- query payment result --------
+            response_json = self._query_result(
+                out_trade_no=json.loads(transaction.data["biz_content"])["out_trade_no"]
+            )
+
+            # -------- check payment status --------
+            response_biz_content = json.loads(response_json["biz_content"])
+            if (
+                response_biz_content.get(
+                    "pay_status", response_biz_content["return_code"]
+                )
+                == "0"
+            ):
+                return response_json
+
+        # -------- if no succeeded payment found, return the payment result of the current PaymentTransaction --------
+        return self._query_result()
+
+    def _query_result(self, out_trade_no: str | None = None):
         url = "https://gw.open.icbc.com.cn/api/cardbusiness/aggregatepay/b2c/online/orderqry/V1"
         event_settings = current_plugin.event_settings.get_all(self.event)
 
@@ -195,9 +222,13 @@ class RHICBCpaySuccess(RHICBCpayNotify):
         # -------- biz content --------
         biz_content = {}
         biz_content["mer_id"] = event_settings["mer_id"]
-        biz_content["out_trade_no"] = json.loads(
-            self.registration.transaction.data["biz_content"]
-        )["out_trade_no"]
+        biz_content["out_trade_no"] = (
+            json.loads(self.registration.transaction.data["biz_content"])[
+                "out_trade_no"
+            ]
+            if out_trade_no is None
+            else out_trade_no
+        )
         biz_content["deal_flag"] = "0"
         biz_content["icbc_app_id"] = event_settings["app_id"]
         biz_content["mer_prtcl_no"] = event_settings["mer_prtcl_no"]
@@ -232,6 +263,10 @@ class RHICBCpaySuccess(RHICBCpayNotify):
             response_biz_content, event_settings["encrypt_key"]
         )
         response_json["biz_content"] = response_biz_content_decrypted
+
+        current_plugin.logger.info(
+            f"got ICBC payment query result: {response_json} with data: {data} and biz_content: {biz_content}"
+        )
 
         return response_json
 
