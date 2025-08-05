@@ -140,6 +140,28 @@ class EventSettingsForm(PaymentEventSettingsFormBase):
             "Custom payment name. Used in tradeName and tradeSummary. If empty, the title of the event will be used. "
         ),
     )
+    message_related_registration_not_found = StringField(
+        _("message_related_registration_not_found"),
+        [UsedIf(lambda form, _: form.enabled.data), Optional()],
+        description=_("Message shown when the related registration is not found. "),
+    )
+    message_multiple_related_registration = StringField(
+        _("message_multiple_related_registration"),
+        [UsedIf(lambda form, _: form.enabled.data), Optional()],
+        description=_("Message shown when multiple related registration is found. "),
+    )
+    message_related_registration_not_completed = StringField(
+        _("message_related_registration_not_completed"),
+        [UsedIf(lambda form, _: form.enabled.data), Optional()],
+        description=_("Message shown when the related registration is not completed. "),
+    )
+    message_related_registration_completed = StringField(
+        _("message_related_registration_completed"),
+        [UsedIf(lambda form, _: form.enabled.data), Optional()],
+        description=_(
+            "Message shown when the related registration is completed but current payment is not allowed. "
+        ),
+    )
 
 
 class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
@@ -174,6 +196,10 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         "completed_registration_form_id": None,
         "uncompleted_registration_form_id": None,
         "custom_payment_name": "",
+        "message_related_registration_not_found": "No related registration found! Please refer to the notices and complete the related registration first. ",
+        "message_multiple_related_registration": "Multiple registrations with the same email in the related registration found! Please contact the organizers to resolve the conflict. ",
+        "message_related_registration_not_completed": "Related registration has not been completed. Please refer to the notices and complete the related registration first. ",
+        "message_related_registration_completed": "Related registration has been completed. This payment is not allowed. Please refer to the notices.",
     }
 
     def init(self):
@@ -254,22 +280,22 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
                 ).one()
             except NoResultFound:
                 data["payment_allowed"] = False
-                data["message"] = (
-                    "No related registration found! Please refer to the notices and complete the related registration first. "
-                )
+                data["message"] = event_settings[
+                    "message_related_registration_not_found"
+                ]
                 return
             except MultipleResultsFound:
                 data["payment_allowed"] = False
-                data["message"] = (
-                    "Multiple registrations with the same email in the related registration found! Please contact the organizers to resolve the conflict. "
-                )
+                data["message"] = event_settings[
+                    "message_multiple_related_registration"
+                ]
                 return
             else:
                 if related_registration.state != RegistrationState.complete:
                     data["payment_allowed"] = False
-                    data["message"] = (
-                        "Related registration has not been completed. Please refer to the notices and complete the related registration first."
-                    )
+                    data["message"] = event_settings[
+                        "message_related_registration_not_completed"
+                    ]
                     return
                 else:
                     data["payment_allowed"] = True
@@ -297,16 +323,16 @@ class ICBCPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
                 data["payment_allowed"] = True
             except MultipleResultsFound:
                 data["payment_allowed"] = False
-                data["message"] = (
-                    "Multiple registrations with the same email in the related registration found! Please contact the organizers to resolve the conflict. "
-                )
+                data["message"] = event_settings[
+                    "message_multiple_related_registration"
+                ]
                 return
             else:
                 if related_registration.state == RegistrationState.complete:
                     data["payment_allowed"] = False
-                    data["message"] = (
-                        "Related registration has been completed. This payment is not allowed. Please refer to the notices."
-                    )
+                    data["message"] = event_settings[
+                        "message_related_registration_completed"
+                    ]
                     return
                 else:
                     data["payment_allowed"] = True
